@@ -2,22 +2,25 @@ from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 from langchain_mcp_adapters.tools import load_mcp_tools
 from langgraph.prebuilt import create_react_agent
-from langchain_openai import ChatOpenAI
+from langchain_groq import ChatGroq
 from dotenv import load_dotenv
 import asyncio
 import os
 
 load_dotenv()
 
-model = ChatOpenAI(
-    model="gpt-4.1",
+# A great free and fast alternative to GPT is using Groq with Llama 3.
+model = ChatGroq(
+    # This is the current flagship Llama 3 model that is stable and available on Groq.
+    # It has an 8k context window, so the system prompt MUST guide it to be efficient.
+    model="llama3-70b-8192",
     temperature=0.0,
-    openai_api_key=os.getenv("OPENAI_API_KEY"),
-    max_tokens=1000,
+    api_key=os.getenv("GROQ_API_KEY"), # The parameter is `api_key` for ChatGroq
+    max_tokens=2048,
 )
 
 server_params = StdioServerParameters(
-    command="npx"
+    command="npx",
     env={
         "FIRECRAWL_API_KEY": os.getenv("FIRECRAWL_API_KEY"),
     },
@@ -32,13 +35,15 @@ async def main():
             agent = create_react_agent(
                 model=model,
                 tools=tools,
-                verbose=True,
             )
 
             messages = [
                 {
                     "role": "system",
-                    "content": "You are a helpful assistant that can scrape websites, crawl pages, and extract data using FireCrawl tools. Think step by step and use the tools when necessary.",
+                    "content": """You are a helpful assistant that uses FireCrawl tools.
+                    Think step by step. When you use the 'scrape' tool, your goal is to be efficient.
+                    Instead of scraping the entire page, try to use the 'extractor_schema' parameter to extract only the specific information needed to answer the user's question.
+                    This will keep the context small and the process fast. For example, to find products, you might extract a list of items with their names and prices.""",
                 }
             ]
 
