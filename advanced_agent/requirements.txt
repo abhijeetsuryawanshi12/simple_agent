@@ -1,0 +1,8 @@
+python-dotenv
+mcp
+firecrawl-py
+langchain-mcp-adapters
+langgraph
+langchain-openai
+langchain-groq
+pydantic
